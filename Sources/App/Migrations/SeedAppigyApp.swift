@@ -18,6 +18,9 @@ struct SeedAppigyApp: Migration {
     }
 
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        return database.schema("appigyapps").delete()
+        let futures = appigyApps.map({ app in
+            return AppigyApp.query(on: database).filter(\.$name == app.name).delete()
+        })
+        return EventLoopFuture<Void>.andAllComplete(futures, on: database.eventLoop)
     }
 }
