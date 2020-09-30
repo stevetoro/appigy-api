@@ -13,14 +13,14 @@ struct SeedAppigyApp: Migration {
     ]
     
     func prepare(on database: Database) -> EventLoopFuture<Void> {
-        let futures = appigyApps.map({ $0.save(on: database)})
-        return EventLoopFuture<Void>.andAllComplete(futures, on: database.eventLoop)
+        return appigyApps.map({ $0.save(on: database) })
+            .flatten(on: database.eventLoop)
     }
 
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        let futures = appigyApps.map({ app in
-            return AppigyApp.query(on: database).filter(\.$name == app.name).delete()
-        })
-        return EventLoopFuture<Void>.andAllComplete(futures, on: database.eventLoop)
+        let names = appigyApps.map({ $0.name })
+        return AppigyApp.query(on: database)
+            .filter(\.$name ~~ names)
+            .delete()
     }
 }
